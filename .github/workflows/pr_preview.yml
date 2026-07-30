@@ -26,6 +26,10 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    env:
+      UNLABELLED: >-
+        ${{ github.event.action == 'unlabeled' &&
+            github.event.label.name == 'preview' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -36,7 +40,14 @@ jobs:
         with:
           source-dir: .
           action: >-
-            ${{ (github.event.action == 'closed' ||
-                 (github.event.action == 'unlabeled' &&
-                  github.event.label.name == 'preview'))
+            ${{ (github.event.action == 'closed' || env.UNLABELLED == 'true')
                 && 'remove' || 'deploy' }}
+          # Its removal comment always says the pull request was closed.
+          comment: ${{ env.UNLABELLED != 'true' }}
+
+      # Same sticky header as the action, so this replaces that comment.
+      - if: env.UNLABELLED == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: Preview removed because the preview label was removed.
