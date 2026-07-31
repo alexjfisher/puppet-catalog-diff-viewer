@@ -37,6 +37,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: rossjrw/pr-preview-action@v1
+        id: preview
         with:
           source-dir: .
           action: >-
@@ -45,9 +46,15 @@ jobs:
           # Its removal comment always says the pull request was closed.
           comment: ${{ env.UNLABELLED != 'true' }}
 
-      # Same sticky header as the action, so this replaces that comment.
+      - if: env.UNLABELLED == 'true'
+        run: echo "REMOVED_AT=$(date '+%Y-%m-%d %H:%M %Z')" >> "$GITHUB_ENV"
+
       - if: env.UNLABELLED == 'true'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: pr-preview
-          message: Preview removed because the preview label was removed.
+          message: |
+            [PR Preview Action](https://github.com/rossjrw/pr-preview-action) ${{ steps.preview.outputs['action-version'] }}
+            :---:
+            Preview removed because the preview label was removed.
+            ${{ env.REMOVED_AT }}
